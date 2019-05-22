@@ -11,10 +11,12 @@ LOGPATH=./logs
 verbose=0
 DEMO=0
 ENGINE=myisam
-USER=
-PASS=
-HOST=
-DB=
+
+source ./config
+# USER=
+# PASS=
+# HOST=
+# DB=
 
 
 function show_help() {
@@ -198,7 +200,7 @@ function main(){
     load_table tls803_legal_event_code
     load_table tls901_techn_field_ipc
     load_table tls902_ipc_nace2
-    load_table tls203_appln_abstr
+    
     load_table tls231_inpadoc_legal_event
 
     # finally, prints out some statistics on loaded tables
