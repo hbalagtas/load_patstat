@@ -10,7 +10,7 @@ ZIPFILESPATH=./data
 LOGPATH=./logs
 verbose=0
 DEMO=0
-ENGINE=myisam
+TMPDIR=/dev/shm
 
 source ./config
 # USER=
@@ -20,14 +20,15 @@ source ./config
 
 
 function show_help() {
-    echo "Usage: [-v] [-t] -u mysql_user -p mysql_pass -h mysql_host -d mysql_dbname -z patstat_zips_dir"
+    echo "Usage: [-v] [-t] -u mysql_user -p mysql_pass -h mysql_host -d mysql_dbname -z patstat_zips_dir -e tmp_dir -m mysql_data_path"
     echo "  -v: be verbose"
     echo "  -t: load small chunks of data for testing purposes"
     echo "  -z: directory containing patstat zipped files shipped in DVDs (defaults to $ZIPFILESPATH)"
     echo "  -o: output and error logs directory (defaults to $LOGPATH)"
-    echo "  -m: mysql data path (defaults to $MYSQLDATAPATH)"
-    echo "  -e: mysql engine (defaults to $ENGINE)"
+    echo "  -e: temp dir to extract the zip files (defaults to $TMPDIR)"
+    echo "  -m: directory of mysql data, used for running myisamchk and myisampack (defaults to $MYSQLDATAPATH)"
 }
+
 
 while getopts "?vto:u:p:d:h:z:m:e:" opt; do
     case "$opt" in
@@ -51,9 +52,9 @@ while getopts "?vto:u:p:d:h:z:m:e:" opt; do
 	;;
     z)  ZIPFILESPATH=$OPTARG
 	;;
-    m)  MYSQLDATAPATH=$OPTARG
+    e)  TMPDIR=$OPTARG
 	;;
-    e)  ENGINE=$(echo $OPTARG | tr  '[:upper:]' '[:lower:]')
+    m)  MYSQLDATAPATH=$OPTARG
 	;;
     esac
 done
@@ -63,9 +64,9 @@ shift $((OPTIND-1))
 
 [ "$1" = "--" ] && shift
 
-if [[ -z $USER ]] || [[ -z $PASS ]] || [[ -z $HOST ]] || [[ -z $DB ]] || [[ -z $ZIPFILESPATH ]]
+if [[ -z $USER ]] || [[ -z $PASS ]] || [[ -z $HOST ]] || [[ -z $DB ]] || [[ -z $ZIPFILESPATH ]] || [[ -z $TMPDIR ]]
 then
-     show_help 
+     show_help
      exit 1
 fi
 
@@ -84,7 +85,7 @@ fi
 SENDSQL="mysql -vv --show-warnings --local-infile -u$USER -p$PASS -h$HOST $DB"
 
 function create_db() {
-    ./tools/create_schema.sh $DB $ENGINE | mysql -vv --show-warnings -u$USER -p$PASS -h$HOST
+    ./tools/create_schema.sh $DB | mysql -vv --show-warnings -u$USER -p$PASS -h$HOST
     echo FLUSH TABLES \; | $SENDSQL
 }
 
@@ -94,32 +95,47 @@ load_table() {
 
 	# This removes all use of indexes for the table.
 	# An option value of 0 disables updates to all indexes, which can be used to get faster inserts.
-	echo TRUNCATE TABLE $1 \; | $SENDSQL 
-        if [[ $ENGINE == "myisam" ]]; then
-	    echo ALTER TABLE $1 DISABLE KEYS\; | $SENDSQL ;
-        fi
+	echo TRUNCATE TABLE $1 \; | $SENDSQL
+	echo ALTER TABLE $1 DISABLE KEYS\; | $SENDSQL ;
 
-        if [[ $ENGINE == "myisam" ]]; then
-	    myisamchk  --keys-used=0 -rqp $MYSQLDATAPATH/$DB/$1*.MYI
-        fi
+	myisamchk  --keys-used=0 -rqp $MYSQLDATAPATH/$DB/$1*.MYI
 
 	echo $TIME Loading data in $1 from $3 files
 
 	# all files containing data for the current table
 	EXPECTED_ROWCOUNT=0
+	# some rows are buggy, that is, they contain a backslash just before the last double quote
+	# e.g.,
+	# 6597821,"US",664004,"CellTech Power, Inc.","Westboro,MA,\"
+	# so we must fix this and we use sed regexp replacement
+	# the original sed expr is
+	# sed -e 's/\\\("[^\"]$\)/\1/g'
+	# but we've to add some extra quotes in order to put the command in a shell variable
+	SED_FIX_1=`echo sed -e 's/\\\\\\("[^\"]$\\)/\1/g'`
+
+	# other rows are bugged as well since the cotain a backslash just before some double quote
+	# separating different columns
+	# e.g.,
+	# 8638854,"",4318,"BROTHER KOGYO KABUSHIKI KAISHA\",""
+    # ... ,"COMPANY",108638854,"BROTHER KOGYO KABUSHIKI KAISHA\",0
+	# so again we've to fix it using sed. The original sed expr used is:
+	#  sed -e 's/\\\(",[0-9\"]\)/\1/g'
+	# the escaped expression is
+	SED_FIX_2=`echo sed -e 's/\\\\\\(",[0-9\"]\\)/\1/g'`
 
 	prefix=$(echo $1 | cut -d'_' -f 1)  # grab only the prefix, e.g. tls201, from the full table name
 	for ZIPPEDFILE in `find $ZIPFILESPATH -name "$prefix\_part*\.zip" | sort`
 	do
 	    echo loading part file $ZIPPEDFILE
 
-	    UNZIPPEDFILE=/dev/shm/`basename $ZIPPEDFILE`.txt
+	    UNZIPPEDFILE=$TMPDIR/`basename $ZIPPEDFILE`.txt
 
             if [ $DEMO -eq 1 ]
 	    then
+                # funzip $ZIPPEDFILE | head -n 10000 | $SED_FIX_1 | $SED_FIX_2 > $UNZIPPEDFILE
                 funzip $ZIPPEDFILE | head -n 10000 > $UNZIPPEDFILE
             else
-                funzip $ZIPPEDFILE > $UNZIPPEDFILE
+                funzip $ZIPPEDFILE | $SED_FIX_1 | $SED_FIX_2 > $UNZIPPEDFILE
 	    fi
 
 	    let "EXPECTED_ROWCOUNT = EXPECTED_ROWCOUNT + `awk 'END { print NR }' $UNZIPPEDFILE` - 1"
@@ -131,8 +147,8 @@ load_table() {
                set foreign_key_checks = 0;
                LOAD DATA LOCAL INFILE "$UNZIPPEDFILE"
                INTO TABLE $1 
-               CHARACTER SET 'utf8mb4'
-               FIELDS TERMINATED BY ","
+	       CHARACTER SET 'utf8mb4'
+	       FIELDS TERMINATED BY ","
                OPTIONALLY ENCLOSED BY '"'
                ESCAPED BY ''
                LINES TERMINATED BY '\r\n'
@@ -140,22 +156,18 @@ load_table() {
                commit;
                SHOW WARNINGS;
 EOF
-	    rm -rf $UNZIPPEDFILE
+	    #rm -rf $UNZIPPEDFILE
 	done
 
-        if [[ $ENGINE == "myisam" ]]; then
-	    echo ALTER TABLE $1 ENABLE KEYS \; | $SENDSQL ;
-        fi
+	echo ALTER TABLE $1 ENABLE KEYS \; | $SENDSQL ;
 
-        if [[ $ENGINE == "myisam" ]]; then
-	    # If you intend only to read from the table in the future, use myisampack to compress it.
-	    # only if it was not partitioned
-	    echo "compressing"
-	    myisampack $MYSQLDATAPATH/$DB/$1.MYI
+	# If you intend only to read from the table in the future, use myisampack to compress it.
+	# only if it was not partitioned
+	echo "compressing"
+	myisampack $MYSQLDATAPATH/$DB/$1.MYI
 
-	    # Re-create the indexes
-	    myisamchk  -rqp --sort-buffer-size=2G $MYSQLDATAPATH/$DB/$1*.MYI
-        fi
+	# Re-create the indexes
+	myisamchk  -rqp --sort-buffer-size=2G $MYSQLDATAPATH/$DB/$1*.MYI
 
 	# FLUSH TABLES
 	echo FLUSH TABLES \; | $SENDSQL
@@ -178,7 +190,6 @@ function main(){
     load_table tls204_appln_prior
     load_table tls205_tech_rel
     load_table tls206_person
-    load_table tls904_nuts
     load_table tls906_person  # this is person table with harmonized names
     load_table tls207_pers_appln
     load_table tls209_appln_ipc
@@ -197,11 +208,11 @@ function main(){
     load_table tls229_appln_nace2
     load_table tls230_appln_techn_field
     load_table tls801_country
-    load_table tls803_legal_event_code
+    load_table tls802_legal_event_code
     load_table tls901_techn_field_ipc
     load_table tls902_ipc_nace2
-    
-    load_table tls231_inpadoc_legal_event
+    load_table tls203_appln_abstr
+    load_table tls221_inpadoc_prs
 
     # finally, prints out some statistics on loaded tables
     $SENDSQL <<EOF
@@ -220,7 +231,7 @@ main 2> $LOGPATH/error_log_$tstamp > $LOGPATH/output_log_$tstamp
 
 # check of errors
 errlines=`wc -l $LOGPATH/error_log_$tstamp | cut -d' ' -f1`
-if [ $errlines -gt 0 ] 
+if [ $errlines -gt 0 ]
 then
     if [ $errlines -le 3 ]
     then
