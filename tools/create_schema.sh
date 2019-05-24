@@ -350,7 +350,7 @@ CREATE TABLE tls231_inpadoc_legal_event (
   KEY event_publn_date (event_publn_date,appln_id),
   KEY event_type (event_type,appln_id),
   KEY event_code (event_code,appln_id)
-) ENGINE=${ENGINE} $ROW_FORMAT DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci  AVG_ROW_LENGTH=100;
+) ENGINE=MyISAM DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE tls801_country (
   ctry_code varchar(2) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT '',
@@ -401,7 +401,7 @@ CREATE TABLE tls904_nuts (
   nuts_level int NOT NULL DEFAULT '0',
   nuts_label varchar(250) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT '',
   PRIMARY KEY (nuts)
-) ENGINE=${ENGINE} $ROW_FORMAT DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci ;
+) ENGINE=MyISAM DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci ;
 
 CREATE TABLE tls906_person (
   person_id int(11) NOT NULL DEFAULT '0',
