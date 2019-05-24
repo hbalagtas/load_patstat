@@ -307,7 +307,50 @@ CREATE TABLE tls230_appln_techn_field (
   PRIMARY KEY (appln_id,techn_field_nr)
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci ;
 
-
+CREATE TABLE tls231_inpadoc_legal_event (
+  event_id int NOT NULL DEFAULT '0',
+  appln_id int(11) NOT NULL DEFAULT '0',
+  event_seq_nr smallint(6) NOT NULL DEFAULT '0',
+  event_type char(3) NOT NULL DEFAULT '  ',
+  event_auth char(2) NOT NULL DEFAULT '  ',
+  event_code varchar(4)  NOT NULL DEFAULT '',
+  event_filing_date date NOT NULL DEFAULT '9999-12-31',
+  event_publn_date date NOT NULL DEFAULT '9999-12-31',
+  event_effective_date date NOT NULL DEFAULT '9999-12-31',
+  event_text varchar(1000) NOT NULL DEFAULT '',
+  ref_doc_auth char(2) NOT NULL DEFAULT '  ',
+  ref_doc_nr varchar(20) NOT NULL DEFAULT '',
+  ref_doc_kind char(2) NOT NULL DEFAULT '  ',
+  ref_doc_date date NOT NULL DEFAULT '9999-12-31',
+  ref_doc_text varchar(1000) NOT NULL DEFAULT '',
+  party_type varchar(3) NOT NULL DEFAULT '   ',
+  party_seq_nr smallint NOT NULL default '0',
+  party_new varchar(1000) NOT NULL DEFAULT '',
+  party_old varchar(1000) NOT NULL DEFAULT '',
+  spc_nr varchar(40) NOT NULL DEFAULT '',
+  spc_filing_date date NOT NULL DEFAULT '9999-12-31',
+  spc_patent_expiry_date date NOT NULL DEFAULT '9999-12-31',
+  spc_extension_date date NOT NULL DEFAULT '9999-12-31',
+  spc_text varchar(1000) NOT NULL DEFAULT '',
+  designated_states varchar(1000) NOT NULL DEFAULT '',
+  extension_states varchar(30) NOT NULL DEFAULT '',
+  fee_country char(2) NOT NULL DEFAULT '  ',
+  fee_payment_date date NOT NULL DEFAULT '9999-12-31',
+  fee_renewal_year smallint NOT NULL default '9999',
+  fee_text varchar(1000) NOT NULL DEFAULT '',
+  lapse_country char(2) NOT NULL DEFAULT '  ',
+  lapse_date date NOT NULL DEFAULT '9999-12-31',
+  lapse_text varchar(1000) NOT NULL DEFAULT '',
+  reinstate_country char(2) NOT NULL DEFAULT '  ',
+  reinstate_date date NOT NULL DEFAULT '9999-12-31',
+  reinstate_text varchar(1000) NOT NULL DEFAULT '',
+  class_scheme varchar(4) NOT NULL DEFAULT '',
+  class_symbol varchar(50) NOT NULL DEFAULT '',
+  PRIMARY KEY (appln_id,event_seq_nr),
+  KEY event_publn_date (event_publn_date,appln_id),
+  KEY event_type (event_type,appln_id),
+  KEY event_code (event_code,appln_id)
+) ENGINE=${ENGINE} $ROW_FORMAT DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci  AVG_ROW_LENGTH=100;
 
 CREATE TABLE tls801_country (
   ctry_code varchar(2) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT '',
@@ -321,6 +364,17 @@ CREATE TABLE tls801_country (
   discontinued char(1) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT '',
   PRIMARY KEY (ctry_code)
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci  AVG_ROW_LENGTH=100;
+
+CREATE TABLE tls803_legal_event_code (
+  event_auth char(2) NOT NULL DEFAULT '',
+  event_code varchar(4) NOT NULL DEFAULT '',
+  event_impact char(1) NOT NULL DEFAULT '',
+  event_descr varchar(250) NOT NULL DEFAULT '',
+  event_descr_orig varchar(250) NOT NULL DEFAULT '',
+  event_category_code char(1) NOT NULL DEFAULT '',
+  event_category_title varchar(100) NOT NULL DEFAULT '',
+  PRIMARY KEY (event_auth, event_code)
+) ENGINE=${ENGINE} $ROW_FORMAT DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci  AVG_ROW_LENGTH=100;
 
 CREATE TABLE tls901_techn_field_ipc (
   ipc_maingroup_symbol varchar(8) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT '',
@@ -342,7 +396,12 @@ CREATE TABLE tls902_ipc_nace2 (
   PRIMARY KEY (ipc,not_with_ipc,unless_with_ipc,nace2_code)
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci ;
 
-
+CREATE TABLE tls904_nuts (
+  nuts varchar(5) NOT NULL,
+  nuts_level int NOT NULL DEFAULT '0',
+  nuts_label varchar(250) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT '',
+  PRIMARY KEY (nuts)
+) ENGINE=${ENGINE} $ROW_FORMAT DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci ;
 
 CREATE TABLE tls906_person (
   person_id int(11) NOT NULL DEFAULT '0',
