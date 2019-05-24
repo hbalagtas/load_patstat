@@ -89,6 +89,7 @@ CREATE TABLE tls205_tech_rel (
 CREATE TABLE tls206_person (
   person_id int(11) NOT NULL DEFAULT '0',
   person_name varchar(500) COLLATE utf8mb4_unicode_ci NOT NULL,
+  person_name_orig_lg varchar(500) COLLATE utf8mb4_unicode_ci NOT NULL,
   person_address varchar(1000) COLLATE utf8mb4_unicode_ci NOT NULL,
   person_ctry_code char(2) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT '',
   doc_std_name_id int(11) NOT NULL DEFAULT '0',
@@ -147,7 +148,7 @@ CREATE TABLE tls211_pat_publn (
   appln_id int(11) NOT NULL DEFAULT '0',
   publn_date date NOT NULL DEFAULT '9999-12-31',
   publn_lg char(2) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT '',
-  publn_first_grant tinyint(4) NOT NULL DEFAULT '0',
+  publn_first_grant char(1) NOT NULL DEFAULT '',
   publn_claims smallint(6) DEFAULT NULL,
   PRIMARY KEY (pat_publn_id),
   KEY IX_publn_auth (publn_auth,publn_nr,publn_kind),
@@ -160,6 +161,7 @@ CREATE TABLE tls211_pat_publn (
 
 CREATE TABLE tls212_citation (
   pat_publn_id int(11) NOT NULL DEFAULT '0',
+  citn_replenished smallint(6) NOT NULL DEFAULT '0',
   citn_id smallint(6) NOT NULL DEFAULT '0',
   citn_origin char(5) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT '',
   cited_pat_publn_id int(11) NOT NULL DEFAULT '0',
@@ -204,44 +206,6 @@ CREATE TABLE tls216_appln_contn (
   contn_type char(3) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT '',
   PRIMARY KEY (appln_id,parent_appln_id)
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci ;
-
-
-
-CREATE TABLE tls221_inpadoc_prs (
-  appln_id int(11) NOT NULL DEFAULT '0',
-  prs_event_seq_nr smallint(6) NOT NULL DEFAULT '0',
-  prs_gazette_date date NOT NULL DEFAULT '9999-12-31',
-  prs_code char(4) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT '',
-  l501ep varchar(2) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT '',
-  l502ep varchar(4) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT '',
-  lec_id smallint(6) NOT NULL DEFAULT '0',
-  l503ep varchar(20) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT '',
-  l504ep varchar(2) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT '',
-  l505ep date NOT NULL DEFAULT '9999-12-31',
-  l506ep varchar(2) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT '',
-  l507ep varchar(300) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT '',
-  l508ep varchar(20) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT '',
-  l509ep varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT '',
-  l510ep varchar(700) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT '',
-  l511ep varchar(20) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT '',
-  l512ep date NOT NULL DEFAULT '9999-12-31',
-  l513ep date NOT NULL DEFAULT '9999-12-31',
-  l515ep varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT '',
-  l516ep varchar(50) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT '',
-  l517ep varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT '',
-  l518ep date NOT NULL DEFAULT '9999-12-31',
-  l519ep varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT '',
-  l520ep tinyint(4) NOT NULL DEFAULT '0',
-  l522ep varchar(255) CHARACTER SET utf8mb4 NOT NULL DEFAULT '',
-  l523ep date NOT NULL DEFAULT '9999-12-31',
-  l524ep varchar(100) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT '',
-  l525ep date NOT NULL DEFAULT '9999-12-31',
-  PRIMARY KEY (appln_id,prs_event_seq_nr),
-  KEY prs_gazette_date (prs_gazette_date,appln_id),
-  KEY lec_id (lec_id,appln_id),
-  KEY prs_code (prs_code,appln_id)
-) ENGINE=MyISAM DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci  AVG_ROW_LENGTH=100;
-
 
 
 CREATE TABLE tls222_appln_jp_class (
@@ -358,24 +322,6 @@ CREATE TABLE tls801_country (
   PRIMARY KEY (ctry_code)
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci  AVG_ROW_LENGTH=100;
 
-
-
-CREATE TABLE tls802_legal_event_code (
-  lec_id smallint(6) NOT NULL DEFAULT '0',
-  auth_cc varchar(2) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT '',
-  lec_name varchar(4) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT '',
-  nat_auth_cc varchar(2) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT '',
-  nat_lec_name varchar(4) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT '',
-  impact char(1) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT '',
-  lec_descr varchar(250) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT '',
-  lecg_id tinyint(4) NOT NULL DEFAULT '0',
-  lecg_name varchar(6) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT '',
-  lecg_descr varchar(150) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT '',
-  PRIMARY KEY (lec_id)
-) ENGINE=MyISAM DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci  AVG_ROW_LENGTH=100;
-
-
-
 CREATE TABLE tls901_techn_field_ipc (
   ipc_maingroup_symbol varchar(8) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT '',
   techn_field_nr tinyint(4) NOT NULL DEFAULT '0',
@@ -419,26 +365,5 @@ CREATE TABLE tls906_person (
   KEY IX_han_harmonized (han_harmonized)
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci  AVG_ROW_LENGTH=100;
 
-
-
-CREATE TABLE tls909_eee_ppat (
-  person_id int(11) NOT NULL DEFAULT '0',
-  person_ctry_code char(2) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT '',
-  person_name varchar(400) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT '',
-  hrm_l1 varchar(400) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT '',
-  hrm_l2 varchar(400) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT '',
-  hrm_level tinyint(4) NOT NULL DEFAULT '0',
-  hrm_l2_id int(11) NOT NULL DEFAULT '0',
-  sector varchar(50) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT '',
-  person_address varchar(1000) COLLATE utf8mb4_unicode_ci NOT NULL,
-  doc_std_name_id int(11) NOT NULL DEFAULT '0',
-  pat_cnt int(11) NOT NULL,
-  PRIMARY KEY (person_id),
-  KEY IX_ppat_person_ctry_code (person_ctry_code),
-  KEY IX_ppat_hrm_l1 (hrm_l1(250)),
-  KEY IX_ppat_hrm_l2 (hrm_l2(250)),
-  KEY IX_ppat_sector (sector),
-  KEY IX_ppat_hrm_l2_id (hrm_l2_id)
-) ENGINE=MyISAM DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci  AVG_ROW_LENGTH=100;
 
 EOF
