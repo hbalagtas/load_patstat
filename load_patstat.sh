@@ -132,8 +132,7 @@ load_table() {
 
             if [ $DEMO -eq 1 ]
 	    then
-                # funzip $ZIPPEDFILE | head -n 10000 | $SED_FIX_1 | $SED_FIX_2 > $UNZIPPEDFILE
-                funzip $ZIPPEDFILE | head -n 10000 > $UNZIPPEDFILE
+                funzip $ZIPPEDFILE | head -n 10000 | $SED_FIX_1 | $SED_FIX_2 > $UNZIPPEDFILE                
             else
                 funzip $ZIPPEDFILE | $SED_FIX_1 | $SED_FIX_2 > $UNZIPPEDFILE
 	    fi
@@ -156,7 +155,7 @@ load_table() {
                commit;
                SHOW WARNINGS;
 EOF
-	    #rm -rf $UNZIPPEDFILE
+	    rm -rf $UNZIPPEDFILE
 	done
 
 	echo ALTER TABLE $1 ENABLE KEYS \; | $SENDSQL ;
